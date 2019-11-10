@@ -1,0 +1,4 @@
+现象：在macos上安装cordova在执行cordova build android 提示   class 文件的版本不支持。
+原因：使用android studio在.grandle目录中下载的5.4.1不能用。 
+办法：brew install gradle 解决。
+
