@@ -1,0 +1,27 @@
+后端改成
+
+header("Access-Control-Allow-Origin:*");
+if( @$_SERVER['HTTP_ORIGIN'] != ""){
+    header("Access-Control-Allow-Origin:". $_SERVER['HTTP_ORIGIN']);
+}
+header("Access-Control-Allow-Methods: GET,POST,OPTIONS");
+header("Access-Control-Max-Age: 100");
+header("Access-Control-Allow-Headers: *");
+header("Access-Control-Allow-Credentials: true");
+
+前端使用
+
+    $.ajax({
+        type:"POST",
+        crossDomain:true,             //这是第一处不可少
+        xhrFields: {
+            withCredentials: true    // 这是第二处不可少
+        },
+        url: (api+ "a=kl"),
+        dataType:'json',
+        data:{},
+        async:true,
+        success:function(data){
+            d = data;
+        },
+    });    
