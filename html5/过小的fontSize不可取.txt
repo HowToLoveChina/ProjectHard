@@ -1,0 +1,4 @@
+fontSize = (clientWidth/320).toFixed(4) + "px";
+
+这样设计不可用，估计是因为fontSize过小不接受，将会使得页面不可控。
+测试令 10px 则可以使用，更低并未测试。
