@@ -1,0 +1,6 @@
+最后一项的后面不能有分号
+
+ENTITY name IS
+PORT(
+    CLOCK_27 : in std_logic 
+);
