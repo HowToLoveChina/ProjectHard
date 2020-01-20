@@ -1,0 +1,7 @@
+
+variable cnt: integer 
+
+if cnt = x'61' then
+
+
+此处等号有  无符号比较和有符号比较，可以将定义为unsigned(7 downto 0)
