@@ -1,0 +1,18 @@
+deauthenticating from xx:xx:xx:xx:xx:xx by local choice 
+应该是两个 wpa-suppliant打架　默认有一个　　wpa-suppliant -u 在执行
+
+systemctl disable wpa-suppliant
+
+配置  /etc/systemd/network/wlan0.network 
+
+[Match]                                                                         
+MACAddress=AA:BB:CC:DD:EE:FF  
+[Link]                                                                          
+Unmanaged=no                                                                    
+[Network]                                                                       
+DHCP=no                                                                         
+Address=192.168.124.xx/24 
+Gateway=192.168.124.100                                                         
+DNS=x.x.x.x    
+
+
