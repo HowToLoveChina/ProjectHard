@@ -1,0 +1,47 @@
+硬件：DE10-nano
+方法：lwaxi
+
+以下为FPGA侧的寄存器，在HPS侧，找到对应的地址，进行读写．
+动态重新配置FPGA参见 https://github.com/HowToLoveChina/de10nano_fpga_linux_config 
+
+  wire        													hps_0_h2f_axi_master_rready;        
+	wire 				[11:0] 										hps_0_h2f_lw_axi_master_awid;       
+	wire 				[20:0] 										hps_0_h2f_lw_axi_master_awaddr;     
+	wire 				[3:0]  										hps_0_h2f_lw_axi_master_awlen;      
+	wire 				[2:0]  										hps_0_h2f_lw_axi_master_awsize;     
+	wire 				[1:0]  										hps_0_h2f_lw_axi_master_awburst;    
+	wire 				[1:0]  										hps_0_h2f_lw_axi_master_awlock;    
+	wire 				[3:0]  										hps_0_h2f_lw_axi_master_awcache;    
+	wire 				[2:0]  										hps_0_h2f_lw_axi_master_awprot;     
+	wire        													hps_0_h2f_lw_axi_master_awvalid;    
+	wire        													hps_0_h2f_lw_axi_master_awready;    
+
+	wire 				[11:0] 										hps_0_h2f_lw_axi_master_wid;       
+	wire 				[31:0] 										hps_0_h2f_lw_axi_master_wdata;     
+	wire 				[3:0]  										hps_0_h2f_lw_axi_master_wstrb;     
+	wire        													hps_0_h2f_lw_axi_master_wlast;     
+	wire        													hps_0_h2f_lw_axi_master_wvalid;    
+	wire        													hps_0_h2f_lw_axi_master_wready;    
+
+	wire 				[11:0] 										hps_0_h2f_lw_axi_master_bid;       
+	wire 				[1:0]  										hps_0_h2f_lw_axi_master_bresp;     
+	wire        													hps_0_h2f_lw_axi_master_bvalid;    
+	wire        													hps_0_h2f_lw_axi_master_bready;    
+
+	wire 				[11:0] 										hps_0_h2f_lw_axi_master_arid;      
+	wire 				[20:0] 										hps_0_h2f_lw_axi_master_araddr;    
+	wire 				[3:0]  										hps_0_h2f_lw_axi_master_arlen;     
+	wire 				[2:0]  										hps_0_h2f_lw_axi_master_arsize;    
+	wire 				[1:0]  										hps_0_h2f_lw_axi_master_arburst;   
+	wire 				[1:0]  										hps_0_h2f_lw_axi_master_arlock;    
+	wire 				[3:0]  										hps_0_h2f_lw_axi_master_arcache;   
+	wire 				[2:0]  										hps_0_h2f_lw_axi_master_arprot;    
+	wire        													hps_0_h2f_lw_axi_master_arvalid;   
+	wire        													hps_0_h2f_lw_axi_master_arready;   
+
+	wire 				[11:0] 										hps_0_h2f_lw_axi_master_rid;       
+	wire 				[31:0] 										hps_0_h2f_lw_axi_master_rdata;     
+	wire 				[1:0]  										hps_0_h2f_lw_axi_master_rresp;     
+	wire        													hps_0_h2f_lw_axi_master_rlast;     
+	wire        													hps_0_h2f_lw_axi_master_rvalid;    
+	wire        													hps_0_h2f_lw_axi_master_rready; 
