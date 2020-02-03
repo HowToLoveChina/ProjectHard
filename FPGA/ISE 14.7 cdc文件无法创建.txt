@@ -1,0 +1,21 @@
+Started : "Creating ChipScope Definition File".
+Running inserter...
+Command Line: inserter -intstyle ise -mode initial -proj /home/tomac/FPGA/x11r/x11r.cdc -p xc7z010 -output_dir _ngo -ise_project_dir /home/tomac/FPGA/x11r
+/opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/unwrapped/inserter: 72: /opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/unwrapped/cs_common.sh: XIL_DIRS[0]=/opt/Xilinx/14.7/ISE_DS/ISE/: not found
+/opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/unwrapped/inserter: 73: /opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/unwrapped/cs_common.sh: count++: not found
+/opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/unwrapped/inserter: 152: /opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/unwrapped/cs_common.sh: Syntax error: Bad for loop variable
+ERROR: Unable to create CDC source
+
+
+此处无法执行count++等命令，也就无法生成cdc文件，经测试需要安装ksh，然后将相关文件改成ksh来解释即可。
+
+
+
+apt install ksh 
+
+/opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/unwrapped/inserter 第一行 #!/bin/sh  改成  #!/bin/ksh
+
+
+/opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/unwrapped/cs_common.sh  第一行  也改成ksh 
+
+
