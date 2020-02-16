@@ -1,0 +1,3 @@
+unc0ver提示　　RootFS already mounted, delete OTA file from Settings – Storage if present and reboot
+
+设置 => 通用 => 关于 => 存储  => IOS x.x.x =>  删除 
