@@ -1,0 +1,1 @@
+rename 's/Find/Replace/'  ` find . -type f |grep Filter` 
