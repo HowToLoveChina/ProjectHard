@@ -1,0 +1,14 @@
+2.sed命令下批量替换文件内容  　
+
+格式: sed -i "s/查找字段/替换字段/g" `grep 查找字段 -rl 路径` 文件名
+
+-i 表示inplace edit，就地修改文件
+
+ -r 表示搜索子目录
+
+ -l 表示输出匹配的文件名
+s表示替换，d表示删除
+
+示例：sed -i "s/shan/hua/g"  lishan.txt
+
+          把当前目录下lishan.txt里的shan都替换为hua
