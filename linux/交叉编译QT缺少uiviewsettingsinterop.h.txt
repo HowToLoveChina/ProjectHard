@@ -1,0 +1,8 @@
+qt/5.9.6-2b12ec36db2/qtbase/src/plugins/platforms/windows/qwin10helpers.cpp
+
+`
+#if defined(Q_CC_MINGW)
+//#  define HAS_UI_VIEW_SETTINGS_INTEROP
+`
+
+取消 define HAS_UI_VIEW_SETTINGS_INTEROP
