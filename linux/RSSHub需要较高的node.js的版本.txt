@@ -1,0 +1,4 @@
+v8 v0.10在运行到got组件时出错
+
+RSSHub/node_modules/got/dist/source/create.js
+应该是要更高版本的，在got中看到v13中没有测试，所以使用v12
