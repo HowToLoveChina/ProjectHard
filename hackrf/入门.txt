@@ -1,1 +1,12 @@
 apt install gnuradio rtl-sdr  gr-osmosdr  hackrf 
+
+```
+git clone https://github.com/csete/gqrx.git
+cd gqrx
+mkdir build
+cd build
+qmake ../gqrx.pro
+make
+sudo make install
+sudo ldconfig
+```
