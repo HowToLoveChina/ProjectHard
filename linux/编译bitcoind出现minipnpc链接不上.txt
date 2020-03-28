@@ -1,0 +1,6 @@
+ ./configure --prefix=/home/tomac/src/998_KRSYS/krsys/depends/x86_64-w64-mingw32 --host=x86_64-w64-mingw32 CPPFLAGS="-DMINIUPNP_STATICLIB"
+
+
+libminiupnp changed their export define. This was fixed in master with 9f7f504 .
+
+If you're building a .9.3 release by hand, you'll need to define MINIUPNP_STATICLIB. Easiest way to do that would be ./configure CPPFLAGS="-DMINIUPNP_STATICLIB"
