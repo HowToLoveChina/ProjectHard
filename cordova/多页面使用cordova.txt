@@ -1,0 +1,2 @@
+    <script type="text/javascript" src="cordova.js"></script>
+每个页面都需要引入该脚本，同时初始化工作会重复执行
