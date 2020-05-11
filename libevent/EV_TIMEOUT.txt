@@ -1,0 +1,2 @@
+EV_PERSIST 只对  EV_READ EVWRITE 有效
+EV_TIMEOUT 达到以后一定会从事件库中删除
