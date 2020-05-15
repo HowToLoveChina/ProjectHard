@@ -1,0 +1,32 @@
+基于libevent的连接，不断重链，断开第１５次时，就会出现event_del操作的不是资源
+
+解决办法： 定时枚举gevents中的所有对象，确保局部代码对全局对象有过操作．
+
+'''
+
+        foreach($GLOBALS['gevents'] as $name=>$event){
+            //保持对象不被释放
+        }
+
+
+function gvadd($name,$fd,$flag,$cb,$data,$to=-1){
+    global $gevents,$gbase;
+    $gevents[$name] = event_new();
+    if( $gevents[$name] === false ){
+        die("event_new error");
+    }
+    printf("gvadd:");var_dump($gevents[$name]);
+    event_set($gevents[$name],$fd,$flag,$cb,$data);
+    event_base_set( $gevents[$name] , $gbase );
+    event_add($gevents[$name],$to);
+}
+
+function gvdel($name){
+    global $gevents;
+    printf("gvdel:");
+    var_dump($gevents[$name]);
+    event_del($gevents[$name]);
+    event_free($gevents[$name]);
+    unset($gevents[$name]);
+}
+'''
