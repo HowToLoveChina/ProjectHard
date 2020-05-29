@@ -1,0 +1,8 @@
+环境：正常上网的主机，通过专网提供服务
+
+iptables -t mangle -A POSTROUTING -j MARK --set-mark 1 -s SPECNET 
+
+ip rule add fwmark 1  lookup table 1
+
+ip route add 0.0.0.0 via SPECGW table 1
+
