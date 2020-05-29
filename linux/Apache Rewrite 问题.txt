@@ -1,0 +1,3 @@
+rewrite  依赖  FollowSymLinks
+
+缺少 NameHost *:80会导致其他的VirtualHost变成基于IP的虚拟主机
