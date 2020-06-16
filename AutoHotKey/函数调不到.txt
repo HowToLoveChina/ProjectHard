@@ -1,0 +1,3 @@
+Result:=Function(Param)
+
+这里最好不要有空格，否则难以调试出问题
