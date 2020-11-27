@@ -1,0 +1,13 @@
+arduion  add => https://raw.githubusercontent.com/ArminJo/DigistumpArduino/master/package_digistump_index.json
+
+DigiSpark 16.5M
+
+
+下载  https://github.com/micronucleus/micronucleus/archive/v1.06.zip
+编译  commandline 
+sudo commandline/micronucleus   upgrade/releases/micronucleus-1.06-upgrade.hex
+
+#vi /etc/udev/rules.d/49-micronucleus.rules
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="16d0", ATTRS{idProduct}=="0753", MODE:="0666"
+KERNEL=="ttyACM*", ATTRS{idVendor}=="16d0", ATTRS{idProduct}=="0753", MODE:="0666", ENV{ID_MM_DEVICE_IGNORE}="1"
+
