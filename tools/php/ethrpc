@@ -1,0 +1,541 @@
+<?php
+#
+#首参数是数字开始的视为IP地址
+#
+#  ethrpc  host port method  [params]
+#
+$params = $argv;
+array_shift($params);  # remove self 
+$ws = false;
+if( strpos($argv[0] ,'ws') ){
+    $ws = true;
+}
+
+if( $argc == 1 ){
+    printf("用法: ethrpc ip地址 端口号  方法 [参数列表] \n");
+    exit(1);
+}
+if( is_digit_leader($params[0]) && $argc > 2 ){
+    if( is_digit_leader($params[1]) ){
+        $host = array_shift($params);
+        $port = array_shift($params);
+        target_save($host,$port);
+    }else{
+        printf("第二个参数应该是端口号\n");
+        exit(1);
+    }
+}else{
+    list($host,$port) = target_load();
+    if( $host === false ){
+        printf("没有指定查询的目标\n");
+        exit(1);
+    }
+}
+if( count($params) < 1 ){
+    #默认的探测指令
+    printf("开始默认探测指令\n");
+    eth_rpc_probe($host,$port,$ws);
+    exit(0);
+}
+
+$method = array_shift($params);
+$r = eth_rpc_command($host,$port,$method,$params,$ws);
+print_r($r);
+target_save($host,$port);
+exit(0);
+
+
+function eth_rpc_probe($host,$port,$ws=false){
+    $report = [];
+    #
+    $r = eth_rpc_command($host,$port,'modules',[],$ws);
+    if( !$r['status'] ){
+        printf("获取可用模块失败\n");
+        return $report;
+    }
+    $d = $r['data'];
+    $modules = [];
+    $str = "";
+    if( !is_array($d['result']) ){
+	$modules['eth'] = true;
+	$modules['net'] = true;	
+	$modules['admin'] = true;	
+	$modules['web3'] = true;	
+    }else
+    foreach( $d['result'] as $n=>$v){
+        $modules[$n] = true;
+        if($str!="")$str.=",";
+        $str .= $n;
+    } 
+    $report['modules'] = $str;
+    $report['target'] = sprintf("%s://%s:%d",($ws?"ws":"http"),$host,$port);
+    #
+    if( array_key_exists('eth',$modules) ){
+        $report = array_merge( $report , probe_eth($host,$port,$ws));
+    }
+    #
+    if( array_key_exists('admin',$modules) ){
+        $report = array_merge( $report , probe_admin($host,$port,$ws));
+    }
+    #
+    if( array_key_exists('net',$modules) ){
+        $report = array_merge( $report , probe_net($host,$port,$ws));
+    }
+    #
+    if( array_key_exists('web3',$modules) ){
+        $report = array_merge( $report , probe_web3($host,$port,$ws));
+    }
+    print_r($report);
+    return $report;
+}
+
+function probe_admin( $host , $port , $ws =false ){
+    $reprot = [];
+    #
+    $r = eth_rpc_command($host,$port,'admin_datadir',[],$ws);
+    if( $r['status'] ){
+        $report['datadir'] = $r['data']['result'];
+    }
+    #
+    $r = eth_rpc_command($host,$port,'admin_nodeInfo',[],$ws);
+    if( $r['status'] ){
+        $report['node_enode'] = $r['data']['result']['enode'];
+        $report['node_name'] = $r['data']['result']['name'];
+    }
+    #
+    $r = eth_rpc_command($host,$port,'admin_peers',[],$ws);
+    if( $r['status'] ){
+        $report['peers'] = [];
+        foreach( $r['data']['result'] as $e){
+	    if( array_key_exists('enode',$e) ) {
+                $report['peers'] = ['name' => $e['name'] ,'enode' => $e['enode']]; 
+	    }else{
+                $report['peers'] = ['name' => $e['name'] ,'id' => $e['id']]; 
+	    }
+        }
+    }
+    return $report;
+
+}
+function probe_net( $host , $port , $ws =false ){
+    $reprot = [];
+    #
+    $r = eth_rpc_command($host,$port,'web3_clientVersion',[],$ws);
+    if( $r['status'] ){
+        $report['webversion'] = $r['data']['result'];
+    }
+    return $report;
+}
+function probe_web3( $host , $port , $ws =false ){
+    $reprot = [];
+    #
+    $r = eth_rpc_command($host,$port,'net_version',[],$ws);
+    if( $r['status'] ){
+        $report['netversion'] = $r['data']['result'];
+    }
+    return $report;
+}
+function probe_eth( $host , $port , $ws =false ){
+    $reprot = [];
+        #
+        $r = eth_rpc_command($host,$port,'eth_protocolVersion',[],$ws);
+        if( $r['status'] ){
+            $report['ethversion'] = @$r['data']['result'];
+        }
+        #
+        $r = eth_rpc_command($host,$port,'net_peerCount',[],$ws);
+        if( $r['status'] ){
+	    if( ! is_null($r['data']) && !array_key_exists('error',$r['data'])  ){
+                $report['peercount'] = @hexdec(@$r['data']['result']);
+            }
+        }
+        #
+        $r = eth_rpc_command($host,$port,'eth_coinbase',[],$ws);
+        if( $r['status'] ){
+            $report['coinbase'] = hexdec(@$r['data']['result']);
+        }
+        #
+        $r = eth_rpc_command($host,$port,'eth_accounts',[],$ws);
+        if( $r['status'] ){
+            if( count($r['data']['result'])>0){
+                $report['accounts'] = $r['data']['result'];
+                foreach($report['accounts'] as $addr){
+                    $r = eth_rpc_command($host,$port,'eth_getBalance',[$addr,'latest'],$ws);
+                    $report[$addr] = hexdec($r['data']['result'])/1e18;
+                }
+            }
+        }
+        #
+        $r = eth_rpc_command($host,$port,'eth_blockNumber',[],$ws);
+        if( $r['status'] ){
+            $report['height'] = hexdec(@$r['data']['result']);
+        }
+        if( $report['height'] > 10 ){
+            $r = eth_rpc_command($host,$port,'eth_getBlockByNumber',[sprintf("0x%x",$report['height']),true],$ws);
+            if( $r['status'] ){
+                $report['last_miner'] = @$r['data']['result']['miner'];
+                $r = eth_rpc_command($host,$port,'eth_getBalance',[$report['last_miner'],'latest'],$ws);
+                if( $r['status'] ){
+                    $report['last_miner_balance'] = hexdec(@$r['data']['result'])/1e18;
+                }
+            }
+
+        }
+    return $report;
+}
+
+
+
+function eth_rpc_command( $host , $port , $method , $params , $ws =false){
+    switch($method){
+        case 'v' : $method = "web3_clientVersion";break;
+        case 'nv' : $method = "net_version";break;
+        case 'ev' : $method = "eth_protoclVersion";break;
+        case 'peers' : $method = "admin_peers";break;
+        case 'm':
+        case 'modules' : $method = "rpc_modules";break;
+        case 'ni' : $method = "admin_nodeInfo";break;
+        case 'ac' : $method = "eth_accounts";break;
+        case 'cb' : $method = "eth_coinbase";break;
+        case 'hr' : $method = "eth_hashrate";break;
+        case 'bn' : $method = "eth_blockNumber";break;
+        case 'balance' : 
+            $method= "eth_getBalance" ; 
+            if( is_digit_leader($params[1]) ){
+                $params[1] = sprintf("0x%x",$params[1]);
+            }else
+            if( $params[1]{0} == 'x' ){
+                $params[1] = "0" . $params[1];
+            }
+            break;
+        case 'block':
+            $method = "eth_getBlockByNumber"; 
+            if( is_digit_leader($params[1]) ){
+                $params[1] = sprintf("0x%x",$params[1]);
+            }else
+            if( $params[1]{0} == 'x' ){
+                $params[1] = "0" . $params[1];
+            }
+            array_push($params,true);
+            break;
+    }//switch
+    if( $ws ){
+        return rpc_command_ws( $host , $port , $method , $params);
+    }else{
+        $url = sprintf("http://%s:%d",$host,$port);
+        return rpc_command( $url , $method , $params);
+    }
+    return $rslt;
+}
+
+
+
+function rpc_command_ws( $host , $port , $method , $params){
+    #var_dump($host , $port , $method , $params );
+
+    foreach( $params as &$p){
+        if( $p == "true") $p = true;
+    }
+    $d = ["jsonrpc"=>"2.0","id"=>2,"method"=> $method ,"params" => $params];
+    $str = json_encode($d);
+    $ws = websocket_open( $host , $port );
+    if( ! $ws ){
+        printf("websocket连接失败\n");
+        return ['status' => false ];
+    }
+    websocket_write($ws,$str);
+    $r = websocket_read($ws);
+    if( ! $r ){
+        printf("websocket接收失败\n");
+        return ['status' => false ];
+    }   
+    $rslt = json_decode($r,true);
+    if( ! $rslt ){
+        return ['status' => false ];
+    }
+    return ['status' => true , 'data' => $rslt ];
+}
+
+function rpc_command( $url , $method , $params ){
+    if( count($params) > 0 ){
+        #var_dump($params);
+        foreach( $params as &$p){
+            if( $p == "true") $p = true;
+        }
+    }
+    $d = ["jsonrpc"=>"2.0","id"=>2,"method"=> $method ,"params" => $params];
+    $r = post( $url, $d );
+    if( ! $r['status']){
+        printf("ERR:网络返回故障\n");
+        exit(1);
+    }
+    return $r ;
+}
+
+
+
+################################################################################
+# 是否是数字开头
+################################################################################
+function is_digit_leader($s){
+    $ch = ord($s[0]);
+    return ( $ch >= ord('0') && $ch <= ord('9'));
+}
+################################################################################
+# 加载存储的目标
+################################################################################
+function target_load(){
+    if(!file_exists(".ethrpc.target"))return [ false, false ];
+    $o = json_decode( file_get_contents('.ethrpc.target') , true);
+    if( ! is_array($o))return [false,false];
+    if( ! array_key_exists('host',$o)) return [false,false];
+    return [ $o['host'],$o['port']];
+}
+################################################################################
+# 保存目标
+################################################################################
+function target_save( $host,$port){
+    file_put_contents(".ethrpc.target",json_encode(['host'=>$host,'port'=>$port]));
+    return true;
+}
+
+
+function post($url,$data){
+    $curl = curl_init();
+    $jsonStringData = json_encode( $data );
+    #echo  $jsonStringData . "\n";
+    $options = [
+        CURLOPT_URL => $url,
+        CURLOPT_POST => true,
+        CURLOPT_USERAGENT => "Mozilla/5.0 (Windows NT 6.1; rv:12.0) Gecko/20100101 Firefox/12.0",
+        CURLOPT_RETURNTRANSFER => 1,
+        CURLOPT_TIMEOUT => 20,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'Referer: http://baidu.com/',
+            'Origin: http://baidu.com/ethrpc_engine/',
+            'Content-Length: ' . strlen( $jsonStringData )
+        ],
+    ];
+    curl_setopt_array( $curl, $options );
+    //设置post数据
+    curl_setopt( $curl, CURLOPT_POSTFIELDS, $jsonStringData );
+    curl_setopt($curl, CURLOPT_TIMEOUT,5);
+    //执行命令
+    $data = curl_exec( $curl );
+    //关闭URL请求
+    if ( $data ) {
+        curl_close( $curl );
+        $res_data = json_decode( $data, true );
+        if( $res_data === false ){
+            $res_data = $data;
+        }
+        return ['status' => true, 'data' => $res_data];
+    } else {
+        $error = curl_error( $curl );
+        $errno = curl_errno( $curl );
+        curl_close( $curl );
+        return ['status' => false, 'data' => '', 'msg' => $error , 'code' => $errno];
+    }
+}
+
+function websocket_open($host='',$port=80,$headers='',&$error_string='',$timeout=10,$ssl=false, $persistant = false, $path = '/', $context = null){
+  // Generate a key (to convince server that the update is not random)
+  // The key is for the server to prove it i websocket aware. (We know it is)
+  $key=base64_encode( rand() . rand() . rand() );
+
+  $header = "GET " . $path . " HTTP/1.1\r\n"
+    ."Host: $host\r\n"
+    ."pragma: no-cache\r\n"
+    ."Upgrade: WebSocket\r\n"
+    ."Connection: Upgrade\r\n"
+    ."Sec-WebSocket-Key: $key\r\n"
+    ."Sec-WebSocket-Version: 13\r\n";
+
+  // Add extra headers
+  #if(!empty($headers)) foreach($headers as $h) $header.=$h."\r\n";
+  if(!empty($headers)) $header .= join("\r\n",$headers);
+
+  // Add end of header marker
+  $header.="\r\n";
+
+  // Connect to server
+  $host = $host ? $host : "127.0.0.1";
+  $port = $port <1 ? ( $ssl ? 443 : 80 ): $port;
+  $address = ($ssl ? 'ssl://' : '') . $host . ':' . $port;
+  
+  $flags = STREAM_CLIENT_CONNECT | ( $persistant ? STREAM_CLIENT_PERSISTENT : 0 );
+  $ctx = $context ?? stream_context_create ();
+  $sp = stream_socket_client($address, $errno, $errstr, $timeout, $flags, $ctx);
+  
+  if(!$sp){
+    $error_string = "Unable to connect to websocket server: $errstr ($errno)";
+    return false;
+  }
+
+  // Set timeouts
+  stream_set_timeout($sp,$timeout);
+
+  if (!$persistant or ftell($sp) === 0) {
+
+    //Request upgrade to websocket
+    $rc = fwrite($sp,$header);
+    if(!$rc){
+      $error_string
+        = "Unable to send upgrade header to websocket server: $errstr ($errno)";
+      return false;
+    }
+
+    // Read response into an assotiative array of headers. Fails if upgrade failes.
+    $reaponse_header=fread($sp, 1024);
+
+    // status code 101 indicates that the WebSocket handshake has completed.
+    if (stripos($reaponse_header, ' 101 ') === false
+      || stripos($reaponse_header, 'Sec-WebSocket-Accept: ') === false) {
+      $error_string = "Server did not accept to upgrade connection to websocket."
+        .$reaponse_header. E_USER_ERROR;
+      return false;
+    }
+    // The key we send is returned, concatenate with "258EAFA5-E914-47DA-95CA-
+    // C5AB0DC85B11" and then base64-encoded. one can verify if one feels the need...
+
+  }
+  return $sp;
+}
+
+/*============================================================================*\
+  Write to websocket
+
+  int websocket_write(resource $handle, string $data ,[boolean $final])
+
+  Write a chunk of data through the websocket, using hybi10 frame encoding
+
+  handle
+    the resource handle returned by websocket_open, if successful
+
+  data
+    Data to transport to server
+
+  final (optional)
+    indicate if this block is the final data block of this request. Default true
+\*============================================================================*/
+function websocket_write($sp,$data,$final=true){
+  // Assamble header: FINal 0x80 | Opcode 0x02
+  $header=chr(($final?0x80:0) | 0x02); // 0x02 binary
+
+  // Mask 0x80 | payload length (0-125)
+  if(strlen($data)<126) $header.=chr(0x80 | strlen($data));
+  elseif (strlen($data)<0xFFFF) $header.=chr(0x80 | 126) . pack("n",strlen($data));
+  else $header.=chr(0x80 | 127) . pack("N",0) . pack("N",strlen($data));
+
+  // Add mask
+  $mask=pack("N",rand(1,0x7FFFFFFF));
+  $header.=$mask;
+
+  // Mask application data.
+  for($i = 0; $i < strlen($data); $i++)
+    $data[$i]=chr(ord($data[$i]) ^ ord($mask[$i % 4]));
+
+  return fwrite($sp,$header.$data);
+}
+
+/*============================================================================*\
+  Read from websocket
+
+  string websocket_read(resource $handle [,string &error_string])
+
+  read a chunk of data from the server, using hybi10 frame encoding
+
+  handle
+    the resource handle returned by websocket_open, if successful
+
+  error_string (optional)
+    A referenced variable to store error messages, i any
+
+  Read
+
+  Note:
+    - This implementation waits for the final chunk of data, before returning.
+    - Reading data while handling/ignoring other kind of packages
+ \*============================================================================*/
+function websocket_read($sp,&$error_string=NULL){
+  $data="";
+
+  do{
+    // Read header
+    $header=fread($sp,2);
+    if(!$header){
+      $error_string = "Reading header from websocket failed.";
+      return false;
+    }
+
+    $opcode = ord($header[0]) & 0x0F;
+    $final = ord($header[0]) & 0x80;
+    $masked = ord($header[1]) & 0x80;
+    $payload_len = ord($header[1]) & 0x7F;
+
+    // Get payload length extensions
+    $ext_len = 0;
+    if($payload_len >= 0x7E){
+      $ext_len = 2;
+      if($payload_len == 0x7F) $ext_len = 8;
+      $header=fread($sp,$ext_len);
+      if(!$header){
+        $error_string = "Reading header extension from websocket failed.";
+        return false;
+      }
+
+      // Set extented paylod length
+      $payload_len= 0;
+      for($i=0;$i<$ext_len;$i++)
+        $payload_len += ord($header[$i]) << ($ext_len-$i-1)*8;
+    }
+
+    // Get Mask key
+    if($masked){
+      $mask=fread($sp,4);
+      if(!$mask){
+        $error_string = "Reading header mask from websocket failed.";
+        return false;
+      }
+    }
+
+    // Get payload
+    $frame_data='';
+    do{
+      $frame= fread($sp,$payload_len);
+      if(!$frame){
+        $error_string = "Reading from websocket failed.";
+        return false;
+      }
+      $payload_len -= strlen($frame);
+      $frame_data.=$frame;
+    }while($payload_len>0);
+
+    // Handle ping requests (sort of) send pong and continue to read
+    if($opcode == 9){
+      // Assamble header: FINal 0x80 | Opcode 0x0A + Mask on 0x80 with zero payload
+      fwrite($sp,chr(0x8A) . chr(0x80) . pack("N", rand(1,0x7FFFFFFF)));
+      continue;
+
+    // Close
+    } elseif($opcode == 8){
+      fclose($sp);
+
+    // 0 = continuation frame, 1 = text frame, 2 = binary frame
+    }elseif($opcode < 3){
+      // Unmask data
+      $data_len=strlen($frame_data);
+      if($masked)
+        for ($i = 0; $i < $data_len; $i++)
+          $data.= $frame_data[$i] ^ $mask[$i % 4];
+      else
+        $data.= $frame_data;
+
+    }else
+      continue;
+
+  }while(!$final);
+
+  return $data;
+}
