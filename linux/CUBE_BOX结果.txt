@@ -1,0 +1,6 @@
+setenv initrd_addr  13000000
+setenv armbianbootemmcargs "root=/dev/mmcblk1p2 rootflags=data=writeback rw console=ttyAML0,115200n8 consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 "
+setenv armbianbootemmc "setenv bootargs ${armbianbootemmcargs} ;setenv verbosity 7;fatload mmc 1  ${loadaddr} zImage;fatload mmc 1  ${initrd_addr} uInitrd;fatload mmc 1  ${dtb_mem_addr} meson-gxl-s905x-p212.dtb;booti ${loadaddr} ${initrd_addr} ${dtb_mem_addr}"
+setenv armbianboot "usb start ; if fatload usb 0 0x1000000 u-boot.ext; then go 0x1000000; fi ; run armbianbootemmc;"
+saveenv 
+reboot
