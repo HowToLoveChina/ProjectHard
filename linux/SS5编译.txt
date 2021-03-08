@@ -1,0 +1,5 @@
+Q:undefined reference to `S5ChildClose'
+A:./configure CFLAGS=-fgnu89-inline
+ 
+ 
+ SS5 compile linux 
