@@ -1,0 +1,2 @@
+x = Array(1,2,4,);
+在chrome中不报错，cordova在手机上报错。
