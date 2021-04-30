@@ -1,1 +1,5 @@
 plugins/[插件目录]/plugin.xml  找到使用相同权限的文件，然后只保留一个权限配置
+
+最终还是移除冲突的插件， cordova clean  && cordova build 解决
+
+如何在不移除的同时解决该问题留存。
