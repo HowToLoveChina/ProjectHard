@@ -1,0 +1,8 @@
+svn up -r 老版本
+全体复制
+svn up 
+复制回去 
+svn ci 
+
+
+svn merge -r 当前版本:要回退的版本  
