@@ -1,1 +1,3 @@
 http://objcer.com/2017/06/04/cordova-register-and-receive-push-notifications-iOS/
+
+https://cloud.tencent.com/developer/article/1556330
