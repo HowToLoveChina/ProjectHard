@@ -1,0 +1,6 @@
+/Library/Android/sdk/build-tools/31.0.0/  
+ln -s d8 dx
+ln -s lib/d8.jar  lib/dx.jar 
+
+
+refence : https://stackoverflow.com/questions/68572466/azure-devops-ionic-android-build-error-build-tool-31-0-0-is-missing-dx-at-usr
