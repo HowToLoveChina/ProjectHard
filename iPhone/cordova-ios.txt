@@ -1,0 +1,2 @@
+提示 xcode-sele 出错
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
