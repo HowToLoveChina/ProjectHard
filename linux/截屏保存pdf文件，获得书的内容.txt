@@ -1,0 +1,5 @@
+adb shell screencap -p /sdcard/aaa.png
+adb pull  /sdcard/aaa.png
+#发送右键
+adb shell input keyevent 22
+  
