@@ -1,0 +1,149 @@
+alist提供的webdav文件挂载功能用kodi直接访问是完全可以的
+但是用davfs2直接mount以后文件读取提示  Input/output error
+经测试  davfs2 在  dav_get_file 中 遇到多个302跳转，就出错了。
+
+情况是  ret = ne_request_dispatch(req);  返回为零，实际上是302 
+
+在访问中遇到302就持续跳转用status->code来判断，不可用 dispatch的ret来处理。
+
+
+```
+
+int
+dav_get_file(const char *path, const char *cache_path, off_t *size,
+             char **etag, time_t *mtime, int *modified)
+{
+	const ne_status *status;
+	syslog(LOG_MAKEPRI(LOG_DAEMON, LOG_DEBUG), "DAV_GET_FILE BEGIN %s",path);
+    int ret;
+    if (!initialized) {
+        ret = dav_init_connection(path);
+        if (ret) return ret;
+    }
+
+    get_context ctx;
+    ctx.error = 0;
+    ctx.file = cache_path;
+    ctx.fd = 0;
+
+    char *spath = ne_path_escape(path);
+    ne_request *req = ne_request_create(session, "GET", spath);
+
+    if (etag && *etag){
+        ne_add_request_header(req, "If-None-Match", *etag);
+    }
+    char *mod_time = NULL;
+    if (mtime && *mtime) {
+        mod_time = ne_rfc1123_date(*mtime);
+        ne_add_request_header(req, "If-Modified-Since", mod_time);
+    }
+
+    ne_decompress *dc_state = NULL;
+    if (use_compression) {
+        dc_state = ne_decompress_reader(req, ne_accept_2xx, file_reader, &ctx);
+    } else {
+        ne_add_response_body_reader(req, ne_accept_2xx, file_reader, &ctx);
+    }
+    ret = ne_request_dispatch(req);
+    if (use_compression){
+        ne_decompress_destroy(dc_state);
+    }
+	status = ne_get_status(req);        
+
+    ne_session *rd_sess = NULL;
+    const ne_uri *rd_uri = NULL;
+    int retry = 4 ; 
+    while ( status->code >= 300  && status->code < 400 && --retry > 0 ){
+        rd_uri = ne_redirect_location(session);
+        const char *value = ne_get_response_header(req, "Location");
+
+        if( value ){
+        	ne_uri x ;
+        	ne_uri_parse(value,&x);
+	        rd_sess = create_rd_session(&x);
+        }else{
+	        rd_sess = create_rd_session(rd_uri);
+        }
+        char *rd_path = NULL;
+        if( value ){
+        	rd_path = ne_strdup(ne_strclean((char*)value));
+        }else
+        if (rd_uri->query) {
+            rd_path = ne_concat(rd_uri->path, "?", rd_uri->query, NULL);
+        } else {
+            rd_path = ne_strdup(rd_uri->path);
+        }
+		syslog(LOG_MAKEPRI(LOG_DAEMON, LOG_DEBUG), "DAV_GET_FILE REDIRECT TO %s", rd_path );
+
+        ne_request_destroy(req);
+        req = ne_request_create(rd_sess, "GET", rd_path);
+
+        if (etag && *etag){
+            ne_add_request_header(req, "If-None-Match", *etag);
+        }
+        if (use_compression) {
+            dc_state = ne_decompress_reader(req, ne_accept_2xx, file_reader,&ctx);
+        } else {
+            ne_add_response_body_reader(req, ne_accept_2xx, file_reader, &ctx);
+        }
+		syslog(LOG_MAKEPRI(LOG_DAEMON, LOG_DEBUG), "DAV_GET_FILE REDIRECT-REQUEST");
+        ret = ne_request_dispatch(req);
+		syslog(LOG_MAKEPRI(LOG_DAEMON, LOG_DEBUG), "DAV_GET_FILE REDIRECT-RETURN  %d ",ret);
+
+        if (use_compression){
+            ne_decompress_destroy(dc_state);
+        }
+        status = ne_get_status(req);
+        //ret = get_error(ret, "GET", rd_sess);
+        free(rd_path);
+        rd_uri = NULL;
+    }    
+    
+    if(rd_uri==NULL){
+    	ret = get_error(ret, "GET", session);
+   	}
+
+    if (ctx.error)
+        ret = ctx.error;
+
+
+    if (!ret && status->code == 200) {
+
+        if (modified)
+            *modified = 1;
+
+        const char *value = ne_get_response_header(req, "Content-Length");
+        if (value)
+#if _FILE_OFFSET_BITS == 64
+            *size = strtoll(value, NULL, 10);
+#else /* _FILE_OFFSET_BITS != 64 */
+            *size = strtol(value, NULL, 10);
+#endif /* _FILE_OFFSET_BITS != 64 */
+
+        value = ne_get_response_header(req, "Last-Modified");
+        if (mtime && value)
+            *mtime = ne_httpdate_parse(value);
+
+        if (etag) {
+            if (*etag) free(*etag);
+            *etag = normalize_etag(ne_get_response_header(req, "ETag"));
+        }
+
+    }
+
+    ne_request_destroy(req);
+    if (rd_sess)
+        ne_session_destroy(rd_sess);
+    if (ctx.fd > 0)
+        close(ctx.fd);
+    if (mod_time)
+        free(mod_time);
+    free(spath);
+    return ret;
+}
+
+
+```
+
+
+按如上处理以后，会提示cache达到65M，后未果。
