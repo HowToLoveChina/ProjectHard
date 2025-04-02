@@ -1,0 +1,48 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
+
+/*
+  alps s6 翻译机的BOOTIMG中的rootfs展开与打包 
+  mtkclient rl apls-s6   读取所有的内容
+  abootimg -x  apls-s6/BOOTIMG.bin  展开启动映象
+  dd if=initrd.img of=initrd.gz bs=512 skip=1    跳过前面的文件头
+  gunzip initrd.gz     删除了initr.gz 生成未压缩
+  cpio -divm < initrd   展开
+  修改default.prop 
+       ro.debugable=1
+       ro.adb.secure=0
+       persist.servie.adb.enable=1
+       persist.sys.usb.confg=mtp,adb 
+  以上为修改项，保持打开adb 
+  find .| cpio -o -H newc | gzip > ../new_initrd.gz    #打包成gz
+  mkrootfs   new_initrd.gz   #本程序生成new_initrd.img 
+  abootimg -u BOOTIMG.bin  -r new_initrd.img     #修改原始文件
+  mtk  w BOOTIMG  BOOTIMG.bin    #刷回
+*/
+
+int main( int argc,char ** argv){
+        FILE *fp = fopen(argv[1],"rb");
+        fseek(fp,0,SEEK_END);
+        uint32_t sz = (uint32_t)ftell(fp);
+        printf("size=%u\n",sz);
+        fseek(fp,0,SEEK_SET);
+        uint32_t header[512/4];
+        memset(header,0xff,sizeof(header));
+        memset(header,0x00,40);
+        header[0]=0x58881688;
+        header[1]=(uint32_t)sz;
+        strcpy((char*)&header[2],"ROOTFS");
+        FILE *fo=fopen("new_initrd.img","wb");
+        fwrite(header,1,512,fo);
+        while(sz>0){
+           uint32_t n =  (sz>512)?512:sz;
+           fread(header,1,n,fp);
+           fwrite(header,1,n,fo);
+           sz -=n;
+        }
+        fclose(fp);
+        fclose(fo);
+        return 0;
+}
