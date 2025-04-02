@@ -20,6 +20,27 @@
   mkrootfs   new_initrd.gz   #本程序生成new_initrd.img 
   abootimg -u BOOTIMG.bin  -r new_initrd.img     #修改原始文件
   mtk  w BOOTIMG  BOOTIMG.bin    #刷回
+
+PRELOADER:           Offset 0x0000000000000000, Length 0x0000000000c00000, Flags 0x000000ff, UUID b'', Type 1
+MBR:                 Offset 0x0000000000c00000, Length 0x0000000000080000, Flags 0x000000ff, UUID b'', Type 1
+EBR1:                Offset 0x0000000000c80000, Length 0x0000000000080000, Flags 0x000000ff, UUID b'', Type 1
+PRO_INFO:            Offset 0x0000000000d00000, Length 0x0000000000300000, Flags 0x000000ff, UUID b'', Type 1
+NVRAM:               Offset 0x0000000001000000, Length 0x0000000000500000, Flags 0x000000ff, UUID b'', Type 1
+PROTECT_F:           Offset 0x0000000001500000, Length 0x0000000000a00000, Flags 0x000000ff, UUID b'', Type 1
+PROTECT_S:           Offset 0x0000000001f00000, Length 0x0000000000a00000, Flags 0x000000ff, UUID b'', Type 1
+SECCFG:              Offset 0x0000000002900000, Length 0x0000000000020000, Flags 0x000000ff, UUID b'', Type 1
+UBOOT:               Offset 0x0000000002920000, Length 0x0000000000060000, Flags 0x000000ff, UUID b'', Type 1
+BOOTIMG:             Offset 0x0000000002980000, Length 0x0000000000600000, Flags 0x000000ff, UUID b'', Type 1
+RECOVERY:            Offset 0x0000000002f80000, Length 0x0000000000600000, Flags 0x000000ff, UUID b'', Type 1
+SEC_RO:              Offset 0x0000000003580000, Length 0x0000000000040000, Flags 0x000000ff, UUID b'', Type 1
+MISC:                Offset 0x00000000035c0000, Length 0x0000000000080000, Flags 0x000000ff, UUID b'', Type 1
+LOGO:                Offset 0x0000000003640000, Length 0x0000000000300000, Flags 0x000000ff, UUID b'', Type 1
+EXPDB:               Offset 0x0000000003940000, Length 0x0000000000a00000, Flags 0x000000ff, UUID b'', Type 1
+ANDROID:             Offset 0x0000000004340000, Length 0x0000000032000000, Flags 0x000000ff, UUID b'', Type 1
+CACHE:               Offset 0x0000000036340000, Length 0x000000000e200000, Flags 0x000000ff, UUID b'', Type 1
+USRDATA:             Offset 0x0000000044540000, Length 0x00000000a1bc0000, Flags 0x000000ff, UUID b'', Type 1
+BMTPOOL:             Offset 0x00000000ffff0000, Length 0x0000000001500000, Flags 0x000000ff, UUID b'', Type 1
+
 */
 
 int main( int argc,char ** argv){
