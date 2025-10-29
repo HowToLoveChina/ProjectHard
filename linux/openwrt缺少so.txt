@@ -1,0 +1,5 @@
+openwrt的pthread,resolv等库在libc中提供，所以装不了这些lib
+
+gcc -fPIC -shared xxx.c -o xxx.so 
+
+做一个空的so放在相应的位置可以解决
