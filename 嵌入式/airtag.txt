@@ -1,0 +1,9 @@
+macless-heystack 项目的硬件使用固定的pubkey进行公告。
+
+在反复使用后，后端publish会过滤到很多数据包
+
+只有用secp224r1动态生成或可结局这个问题
+
+nrf5的flash的擦除是1K为单位，可以动态生成一批key存在flash里，定时更新。
+
+时基动态查询。
