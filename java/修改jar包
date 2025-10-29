@@ -1,0 +1,4 @@
+修改jar
+. 解包 jar -xvf xxx.jar
+. 修改 sed -i 's/2017-04-24/2025-08-27/g' bbbb.class
+. 重新打包 jar -cfM0 xxx.jar com META-INF 
