@@ -1,0 +1,3 @@
+ java.lang.ClassNotFoundException: Forbidden class *.QueeNode!
+
+   applicatioin.properties 中增加 spring.activemq.packages.trust-all=true 此处可能会有潜在风险
